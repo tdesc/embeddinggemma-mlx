@@ -8,10 +8,16 @@ Matryoshka-усечение и OpenAI-совместимый сервер `/v1/e
 
 ## Статус (честно)
 
-- ✅ Текст+код: конвертация, pooling, Matryoshka, сервер, тесты (мок-режим — CI без весов).
-- ⏳ Веса: зависит от поддержки архитектуры в `mlx_lm` на момент конвертации
-  (семейство Gemma-3-text — обычно совместимо). Если `mlx-community` уже выпустил
-  порт — используйте его напрямую с нашим сервером.
+- ✅ Текст+код: pooling, Matryoshka, сервер, тесты (мок-режим — CI без весов).
+- ⛔ Конвертация весов: `mlx_lm 0.31.3` не поддерживает `model_type: embedding_gemma2`
+  (`ValueError: Model type embedding_gemma2 not supported`). Модель — sentence-transformers-пакет
+  (modules.json/1_Pooling/2_Normalize) с единым model.safetensors на все башни; текстовая башня —
+  наследница gemma3_text, но с новыми полями конфига (`per_layer_config`,
+  `hidden_size_per_layer_input`, `layer_types`) — нужен реальный порт архитектуры, не переименование.
+  Анализ и план — в issue #1.
+- 🌉 Мост на сегодня: сама модель работает через `sentence-transformers` на MPS
+  (`pip install sentence-transformers; SentenceTransformer('google/embeddinggemma-2')`),
+  dim 768 — наш сервер и Colony-провайдер примут её, когда порт весов появится.
 - 🚧 Мультимодальные башни (vision/audio) — вне этого пакета (второй волной).
 
 ## Установка

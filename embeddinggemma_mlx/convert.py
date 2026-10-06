@@ -33,14 +33,13 @@ def main() -> int:
     else:
         print("Converting in fp16 (no quantization) — recommended for embeddings.")
 
-    import mlx_lm.convert as mlx_convert  # type: ignore
+    import mlx_lm
 
-    mlx_convert.main(  # type: ignore[attr-defined]
-        [
-            "--hf-path", args.hf_path,
-            "--mlx-path", args.mlx_path,
-            *([] if not args.quantize else ["--quantize", "--q-bits", str(args.q_bits)]),
-        ]
+    mlx_lm.convert(  # callable re-exported by the package (mlx_lm >=0.19)
+        hf_path=args.hf_path,
+        mlx_path=args.mlx_path,
+        quantize=args.quantize,
+        q_bits=args.q_bits,
     )
     print(f"Done. Serve it: python -m embeddinggemma_mlx.server --model {args.mlx_path}")
     return 0
