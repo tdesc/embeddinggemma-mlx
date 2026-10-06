@@ -1,0 +1,33 @@
+[project]
+name = "embeddinggemma-mlx"
+version = "0.1.0"
+description = "EmbeddingGemma 2 text-tower embeddings on Apple Silicon via MLX: conversion, last-token pooling, Matryoshka dims, OpenAI-compatible /v1/embeddings server"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "tdesc" }]
+keywords = ["mlx", "embeddings", "embeddinggemma", "gemma", "apple-silicon", "retrieval"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "numpy>=1.24",
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+]
+
+[project.optional-dependencies]
+mlx = ["mlx>=0.16", "mlx_lm>=0.31"]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[project.urls]
+Homepage = "https://github.com/tdesc/embeddinggemma-mlx"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["embeddinggemma_mlx"]

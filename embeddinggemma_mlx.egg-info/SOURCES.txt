@@ -1,0 +1,17 @@
+LICENSE
+README.md
+pyproject.toml
+embeddinggemma_mlx/__init__.py
+embeddinggemma_mlx/convert.py
+embeddinggemma_mlx/matryoshka.py
+embeddinggemma_mlx/model.py
+embeddinggemma_mlx/pooling.py
+embeddinggemma_mlx/server.py
+embeddinggemma_mlx.egg-info/PKG-INFO
+embeddinggemma_mlx.egg-info/SOURCES.txt
+embeddinggemma_mlx.egg-info/dependency_links.txt
+embeddinggemma_mlx.egg-info/requires.txt
+embeddinggemma_mlx.egg-info/top_level.txt
+tests/test_matryoshka.py
+tests/test_pooling.py
+tests/test_server.py

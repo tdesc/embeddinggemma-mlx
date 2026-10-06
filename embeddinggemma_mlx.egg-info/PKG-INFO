@@ -1,0 +1,100 @@
+Metadata-Version: 2.4
+Name: embeddinggemma-mlx
+Version: 0.1.0
+Summary: EmbeddingGemma 2 text-tower embeddings on Apple Silicon via MLX: conversion, last-token pooling, Matryoshka dims, OpenAI-compatible /v1/embeddings server
+Author: tdesc
+License: MIT
+Project-URL: Homepage, https://github.com/tdesc/embeddinggemma-mlx
+Keywords: mlx,embeddings,embeddinggemma,gemma,apple-silicon,retrieval
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.24
+Requires-Dist: fastapi>=0.110
+Requires-Dist: uvicorn>=0.29
+Provides-Extra: mlx
+Requires-Dist: mlx>=0.16; extra == "mlx"
+Requires-Dist: mlx_lm>=0.31; extra == "mlx"
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: httpx>=0.27; extra == "dev"
+Dynamic: license-file
+
+# embeddinggemma-mlx
+
+**EmbeddingGemma 2** (Google, 740M, Apache-2.0) — нативно мультимодальный
+эмбеддер (текст, код, изображения, аудио, видео, PDF → единое пространство,
+100+ языков, Matryoshka 768/512/256/128). Этот пакет — **текстовая башня на
+Apple Silicon через MLX**: конвертация весов, last-token pooling, L2-норма,
+Matryoshka-усечение и OpenAI-совместимый сервер `/v1/embeddings`.
+
+## Статус (честно)
+
+- ✅ Текст+код: конвертация, pooling, Matryoshka, сервер, тесты (мок-режим — CI без весов).
+- ⏳ Веса: зависит от поддержки архитектуры в `mlx_lm` на момент конвертации
+  (семейство Gemma-3-text — обычно совместимо). Если `mlx-community` уже выпустил
+  порт — используйте его напрямую с нашим сервером.
+- 🚧 Мультимодальные башни (vision/audio) — вне этого пакета (второй волной).
+
+## Установка
+
+```bash
+pip install -e ".[mlx,dev]"
+```
+
+## Конвертация весов (fp16 — без квантования!)
+
+```bash
+python -m embeddinggemma_mlx.convert --hf-path google/embeddinggemma-2 \
+    --mlx-path ./embeddinggemma-2-mlx
+```
+
+Эмбеддинги чувствительны к сжатию весов: `--quantize` доступен, но не
+рекомендуется — сначала канарей качества.
+
+## Сервер
+
+```bash
+python -m embeddinggemma_mlx.server --model ./embeddinggemma-2-mlx --port 7341
+EMBEDDINGGEMMA_MOCK=1 python -m embeddinggemma_mlx.server   # CI/демо без весов
+
+curl localhost:7341/v1/embeddings -H 'content-type: application/json' \
+  -d '{"model":"embeddinggemma-2-mlx","input":["привет мир","hello world"],"dims":256}'
+```
+
+Ответ — OpenAI-формы: `data[].embedding`, `usage.total_tokens`, плюс
+`served_by: mlx_lm|mock` и `latency_ms`.
+
+## Контракт
+
+- **Pooling**: last-token (EOS добавляется к входу) — рецепт Gemma-эмбеддеров.
+- **Норма**: L2 всегда.
+- **Matryoshka**: `dims ∈ {768,512,256,128}` — срез первых компонент + перенорма;
+  вложенное усечение консистентно (256-префикс 512 == 256 напрямую — тестом).
+- **Потоки**: все MLX-форварды на одном диспетчер-потоке (Metal thread-local).
+- **Фейлы громкие**: пустой input → 400; неизвестная модель → 404; dims не из
+  списка → 400.
+
+## Библиотека
+
+```python
+from embeddinggemma_mlx import MlxEmbeddingGemma
+
+emb = MlxEmbeddingGemma("./embeddinggemma-2-mlx", dims=256)
+vec = emb.embed("какая рука ближе к петле?").embedding  # np.float32[256], ||v||=1
+```
+
+## Зачем это нужно (наш кейс)
+
+Локальная память на qdrant сегодня сидит на англо-центричном MiniLM-384;
+мультиязычный эмбеддер делает RU/EN/ZH-recall семантическим на той же машине
+(740M ≈ 1.5 ГБ fp16 — рядом с 7B-чатом незаметно). Канарей-скрипт сравнения —
+`scripts/canary_ru_en.py` (опциональные зависимости).
+
+## Лицензии
+
+Код — MIT. Конвертированные веса производны от `google/embeddinggemma-2`
+и остаются Apache-2.0 от Google (см. LICENSE).
